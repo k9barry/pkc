@@ -187,8 +187,11 @@ class DocumentProcessor:
                 print(f"Skipping chunk {i+1} due to embedding failure")
                 continue
             
-            # Create point
-            point_id = self.compute_hash(f"{file_path}_{i}")
+            # Create point ID using content hash for better deduplication
+            # This allows the same content to be deduplicated even if processed from different paths
+            chunk_content_hash = self.compute_hash(chunk)
+            point_id = f"{chunk_content_hash}_{i}"
+            
             point_metadata = {
                 "text": chunk,
                 "source": str(file_path),

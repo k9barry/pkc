@@ -39,22 +39,23 @@ def upload_file(file_path: Path, metadata: dict = None):
     # Prepare webhook URL
     webhook_url = f"{N8N_URL}/{UPLOAD_WEBHOOK}"
     
-    # Prepare files
-    files = {
-        'file': (file_path.name, open(file_path, 'rb'))
-    }
-    
     # Prepare form data
     data = metadata or {}
     data['filename'] = file_path.name
     
+    # Use context manager for file handling
     try:
-        response = requests.post(
-            webhook_url,
-            files=files,
-            data=data,
-            timeout=30
-        )
+        with open(file_path, 'rb') as f:
+            files = {
+                'file': (file_path.name, f)
+            }
+            
+            response = requests.post(
+                webhook_url,
+                files=files,
+                data=data,
+                timeout=30
+            )
         
         if response.status_code == 200:
             print(f"✓ Successfully uploaded {file_path.name}")
@@ -72,8 +73,6 @@ def upload_file(file_path: Path, metadata: dict = None):
     except Exception as e:
         print(f"✗ Upload error: {e}")
         return False
-    finally:
-        files['file'][1].close()
 
 
 def main():
