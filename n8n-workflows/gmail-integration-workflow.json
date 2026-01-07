@@ -75,7 +75,7 @@
     },
     {
       "parameters": {
-        "command": "python3 {{ $env.PKC_HOME }}/scripts/process_document.py \"{{ $json.tempFilePath }}\" source=gmail email_id={{ $json.emailId }} subject=\"{{ $json.subject }}\" from=\"{{ $json.from }}\""
+        "command": "python3 {{ $env.PKC_HOME }}/scripts/process_document.py \"{{ $json.tempFilePath }}\" \"source=gmail\" \"email_id={{ $json.emailId }}\" \"subject={{ $json.subject }}\" \"from={{ $json.from }}\""
       },
       "name": "Process Email Content",
       "type": "n8n-nodes-base.executeCommand",
@@ -129,7 +129,7 @@
     },
     {
       "parameters": {
-        "command": "python3 {{ $env.PKC_HOME }}/scripts/process_document.py \"{{ $json.binary.data.directory }}/{{ $json.binary.data.fileName }}\" source=gmail_attachment email_id={{ $json.emailId }} attachment_name=\"{{ $json.attachmentName }}\""
+        "command": "python3 {{ $env.PKC_HOME }}/scripts/process_document.py \"{{ $json.binary.data.directory }}/{{ $json.binary.data.fileName }}\" \"source=gmail_attachment\" \"email_id={{ $json.emailId }}\" \"attachment_name={{ $json.attachmentName }}\""
       },
       "name": "Process Attachment",
       "type": "n8n-nodes-base.executeCommand",
