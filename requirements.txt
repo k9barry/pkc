@@ -1,7 +1,7 @@
 # Core dependencies
 python-dotenv==1.0.0
 requests==2.31.0
-aiohttp==3.9.1
+aiohttp==3.13.3  # Updated from 3.9.1 - fixes zip bomb, DoS, and directory traversal vulnerabilities
 
 # Gmail API
 google-auth==2.25.2
@@ -18,11 +18,11 @@ markdown==3.5.1
 
 # Text processing and embeddings
 langchain==0.1.0
-langchain-community==0.0.10
+langchain-community==0.3.27  # Updated from 0.0.10 - fixes XXE, SSRF, and pickle deserialization vulnerabilities
 tiktoken==0.5.2
 
 # Vector database client
-qdrant-client==1.7.0
+qdrant-client==1.9.0  # Updated from 1.7.0 - fixes input validation failure vulnerability
 
 # File monitoring
 watchdog==3.0.0

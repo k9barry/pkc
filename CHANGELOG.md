@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2024-01-07
+
+### Security
+- Updated `aiohttp` from 3.9.1 to 3.13.3
+  - Fixed zip bomb vulnerability (CVE)
+  - Fixed Denial of Service vulnerability in POST request parsing
+  - Fixed directory traversal vulnerability
+- Updated `langchain-community` from 0.0.10 to 0.3.27
+  - Fixed XML External Entity (XXE) attack vulnerability
+  - Fixed SSRF vulnerability in RequestsToolkit component
+  - Fixed pickle deserialization of untrusted data vulnerability
+- Updated `qdrant-client` from 1.7.0 to 1.9.0
+  - Fixed input validation failure vulnerability
+
 ## [1.0.0] - 2024-01-07
 
 ### Added
