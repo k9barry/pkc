@@ -1,0 +1,38 @@
+I’m using truenas scale v25.04 that uses docker containers.  The server is on IP 192.168.9.98
+
+SERVICE NAMES                                                   PORTS                                                                        
+ix-qdrant-qdrant-1                                              6333-6334/tcp, 0.0.0.0:30333/tcp, :::30333->30333/tcp
+ix-n8n-n8n-1                                                    5678/tcp, 0.0.0.0:30109->30109/tcp, :::30109->30109/tcp
+ix-n8n-postgres-1                                               5432/tcp
+ix-n8n-redis-1                                                  6379/tcp
+ix-open-webui-open-webui-1                                      8080/tcp, 0.0.0.0:31028->31028/tcp, :::31028->31028/tcp
+ix-open-webui-redis-1                                           6379/tcp
+ix-ollama-ollama-1                                              11434/tcp, 0.0.0.0:30068->30068/tcp, :::30068->30068/tcp
+
+
+"Networks": {
+                "ix-n8n_default": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": [
+                        "ix-n8n-n8n-1",
+            "Networks": {
+                "ix-qdrant_default": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": [
+                        "ix-qdrant-qdrant-1",
+            "Networks": {
+                "ix-ollama_default": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": [
+                        "ix-ollama-ollama-1",
+            "Networks": {
+                "ix-open-webui_default": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": [
+                        "ix-open-webui-open-webui-1",
+
+
