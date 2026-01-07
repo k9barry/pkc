@@ -24,7 +24,7 @@
     },
     {
       "parameters": {
-        "command": "python3 /path/to/pkc/scripts/process_document.py \"{{ $json.binary.file.directory }}/{{ $json.binary.file.fileName }}\" source={{ $json.source }} title=\"{{ $json.title }}\""
+        "command": "python3 {{ $env.PKC_HOME }}/scripts/process_document.py \"{{ $json.binary.file.directory }}/{{ $json.binary.file.fileName }}\" source={{ $json.source }} title=\"{{ $json.title }}\""
       },
       "name": "Process Document",
       "type": "n8n-nodes-base.executeCommand",

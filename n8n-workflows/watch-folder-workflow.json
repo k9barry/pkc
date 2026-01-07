@@ -48,7 +48,7 @@
     },
     {
       "parameters": {
-        "command": "python3 /path/to/pkc/scripts/process_document.py \"{{ $json.filePath }}\" source=watch_folder"
+        "command": "python3 {{ $env.PKC_HOME }}/scripts/process_document.py \"{{ $json.filePath }}\" source=watch_folder"
       },
       "name": "Process File",
       "type": "n8n-nodes-base.executeCommand",
