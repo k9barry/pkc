@@ -1,0 +1,49 @@
+# Qdrant Configuration for Personal Knowledge Cloud
+
+# Collection settings
+collection:
+  name: pkc_documents
+  
+  # Vector configuration
+  vectors:
+    size: 768  # Must match embedding model output dimension
+    distance: Cosine  # Options: Cosine, Euclidean, Dot
+    
+  # Optimization settings
+  optimizers_config:
+    default_segment_number: 2
+    memmap_threshold: 20000
+    indexing_threshold: 10000
+    
+  # HNSW index configuration for fast search
+  hnsw_config:
+    m: 16  # Number of edges per node
+    ef_construct: 100  # Construction time parameter
+    full_scan_threshold: 10000
+
+# Storage settings
+storage:
+  # Enable on-disk storage for large collections
+  on_disk_payload: true
+  
+# Performance settings
+performance:
+  max_search_threads: 0  # 0 = auto-detect based on CPU cores
+
+# Recommended settings for different embedding models
+embedding_models:
+  nomic-embed-text:
+    vector_size: 768
+    distance_metric: Cosine
+    
+  mxbai-embed-large:
+    vector_size: 1024
+    distance_metric: Cosine
+    
+  all-minilm:
+    vector_size: 384
+    distance_metric: Cosine
+    
+  llama2:
+    vector_size: 4096
+    distance_metric: Cosine

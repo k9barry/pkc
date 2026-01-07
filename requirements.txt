@@ -1,0 +1,33 @@
+# Core dependencies
+python-dotenv==1.0.0
+requests==2.31.0
+aiohttp==3.9.1
+
+# Gmail API
+google-auth==2.25.2
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
+google-api-python-client==2.110.0
+
+# Document processing
+PyPDF2==3.0.1
+python-docx==1.1.0
+beautifulsoup4==4.12.2
+lxml==4.9.3
+markdown==3.5.1
+
+# Text processing and embeddings
+langchain==0.1.0
+langchain-community==0.0.10
+tiktoken==0.5.2
+
+# Vector database client
+qdrant-client==1.7.0
+
+# File monitoring
+watchdog==3.0.0
+
+# Utilities
+pyyaml==6.0.1
+colorlog==6.8.0
+tqdm==4.66.1
