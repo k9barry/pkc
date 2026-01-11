@@ -108,11 +108,13 @@ if [ ! -d venv ]; then
             print_success "Virtual environment created without pip"
             
             # Activate venv temporarily to install pip into it
-            # (The main activation happens later at line 135)
+            # Note: In bash, 'source' modifies the current shell, so this activation
+            # persists beyond this if-block. The activation at line 137 is for cases
+            # where venv creation succeeded with pip, ensuring consistency.
             source venv/bin/activate
             
             print_info "Installing pip manually using get-pip.py (official PyPA script over HTTPS)..."
-            if curl -s https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py; then
+            if curl -sSfL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py; then
                 if python /tmp/get-pip.py; then
                     print_success "pip installed successfully"
                     rm -f /tmp/get-pip.py

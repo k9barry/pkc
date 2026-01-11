@@ -30,7 +30,7 @@ python3 -m venv --without-pip venv
 source venv/bin/activate
 
 # Step 3: Download and install pip manually using official PyPA bootstrap script
-curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+curl --fail --location https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 python get-pip.py
 rm get-pip.py
 
