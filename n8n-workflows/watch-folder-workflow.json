@@ -1,0 +1,237 @@
+{
+  "name": "PKC Watch Folder Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/5 * * * *"
+            }
+          ]
+        }
+      },
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "watch-folder-schedule"
+    },
+    {
+      "parameters": {
+        "command": "find {{ $env.WATCH_FOLDER_PATH }} -type f -newer {{ $env.WATCH_FOLDER_PATH }}/.last_check 2>/dev/null || find {{ $env.WATCH_FOLDER_PATH }} -type f -mmin -5"
+      },
+      "name": "Find New Files",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Parse file list and filter supported types\nconst output = $input.first().json.stdout;\nconst supportedTypes = (process.env.SUPPORTED_FILE_TYPES || '.pdf,.txt,.md,.docx,.doc,.html').split(',');\n\nif (!output || output.trim() === '') {\n  return [];\n}\n\nconst files = output.trim().split('\\n');\nconst items = [];\n\nfor (const file of files) {\n  const filePath = file.trim();\n  if (!filePath) continue;\n  \n  const ext = filePath.substring(filePath.lastIndexOf('.')).toLowerCase();\n  if (supportedTypes.includes(ext)) {\n    items.push({\n      json: {\n        filePath: filePath,\n        fileName: filePath.substring(filePath.lastIndexOf('/') + 1),\n        fileType: ext,\n        detectedAt: new Date().toISOString()\n      }\n    });\n  }\n}\n\nreturn items;"
+      },
+      "name": "Parse File List",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "name": "Split Files",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "command": "python3 {{ $env.PKC_HOME }}/scripts/process_document.py \"{{ $json.filePath }}\" source=watch_folder"
+      },
+      "name": "Process File",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.exitCode }}",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "name": "Check Processing",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "command": "={{ $env.WATCH_FOLDER_ARCHIVE === 'true' ? 'mv \"' + $json.filePath + '\" \"' + $env.WATCH_FOLDER_ARCHIVE_PATH + '/\"' : 'echo \"Archive disabled\"' }}"
+      },
+      "name": "Archive File",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1450, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{\n  json: {\n    error: true,\n    fileName: $input.first().json.fileName,\n    message: 'Processing failed',\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "name": "Log Error",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1450, 400]
+    },
+    {
+      "parameters": {},
+      "name": "Continue Loop",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1650, 300]
+    },
+    {
+      "parameters": {
+        "command": "touch {{ $env.WATCH_FOLDER_PATH }}/.last_check"
+      },
+      "name": "Update Timestamp",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1850, 300]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Find New Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find New Files": {
+      "main": [
+        [
+          {
+            "node": "Parse File List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse File List": {
+      "main": [
+        [
+          {
+            "node": "Split Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Files": {
+      "main": [
+        [
+          {
+            "node": "Process File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process File": {
+      "main": [
+        [
+          {
+            "node": "Check Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Processing": {
+      "main": [
+        [
+          {
+            "node": "Archive File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Archive File": {
+      "main": [
+        [
+          {
+            "node": "Continue Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Error": {
+      "main": [
+        [
+          {
+            "node": "Continue Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue Loop": {
+      "main": [
+        [
+          {
+            "node": "Split Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Files": {
+      "main": [
+        null,
+        [
+          {
+            "node": "Update Timestamp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-07T00:00:00.000Z",
+  "versionId": "1"
+}

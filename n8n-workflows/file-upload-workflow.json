@@ -1,0 +1,161 @@
+{
+  "name": "PKC File Upload Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upload-file",
+        "options": {}
+      },
+      "name": "Webhook - File Upload",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "pkc-file-upload"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract file and metadata from webhook\nconst items = [];\n\nfor (const item of $input.all()) {\n  const binary = item.binary;\n  const metadata = item.json;\n  \n  items.push({\n    json: {\n      filename: metadata.filename || 'unknown',\n      contentType: metadata.contentType || 'application/octet-stream',\n      source: metadata.source || 'webhook_upload',\n      title: metadata.title || metadata.filename,\n      uploadedAt: new Date().toISOString(),\n      metadata: metadata\n    },\n    binary: binary\n  });\n}\n\nreturn items;"
+      },
+      "name": "Process File Info",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "command": "python3 {{ $env.PKC_HOME }}/scripts/process_document.py \"{{ $json.binary.file.directory }}/{{ $json.binary.file.fileName }}\" \"source={{ $json.source }}\" \"title={{ $json.title }}\""
+      },
+      "name": "Process Document",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.QDRANT_URL }}/collections/{{ $env.QDRANT_COLLECTION_NAME }}/points/search",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Verify Storage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.status }}",
+              "value2": "ok"
+            }
+          ]
+        }
+      },
+      "name": "Check Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{\n  json: {\n    success: true,\n    message: 'File uploaded and processed successfully',\n    filename: $input.first().json.filename,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "name": "Success Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{\n  json: {\n    success: false,\n    message: 'File processing failed',\n    filename: $input.first().json.filename,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "name": "Error Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1250, 400]
+    }
+  ],
+  "connections": {
+    "Webhook - File Upload": {
+      "main": [
+        [
+          {
+            "node": "Process File Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process File Info": {
+      "main": [
+        [
+          {
+            "node": "Process Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Document": {
+      "main": [
+        [
+          {
+            "node": "Verify Storage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Storage": {
+      "main": [
+        [
+          {
+            "node": "Check Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Success": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-07T00:00:00.000Z",
+  "versionId": "1"
+}

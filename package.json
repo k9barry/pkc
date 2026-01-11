@@ -1,0 +1,39 @@
+{
+  "name": "personal-knowledge-cloud",
+  "version": "1.0.0",
+  "description": "Personal Knowledge Cloud - AI-powered document management with semantic search",
+  "main": "index.js",
+  "scripts": {
+    "check": "node scripts/check-services.js",
+    "test": "echo \"No tests specified yet\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/k9barry/pkc.git"
+  },
+  "keywords": [
+    "knowledge-management",
+    "ai",
+    "llm",
+    "vector-database",
+    "semantic-search",
+    "qdrant",
+    "ollama",
+    "n8n",
+    "automation",
+    "document-processing"
+  ],
+  "author": "PKC Contributors",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/k9barry/pkc/issues"
+  },
+  "homepage": "https://github.com/k9barry/pkc#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "optionalDependencies": {}
+}

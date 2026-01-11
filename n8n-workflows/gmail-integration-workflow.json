@@ -1,0 +1,339 @@
+{
+  "name": "PKC Gmail Integration Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/15 * * * *"
+            }
+          ]
+        }
+      },
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "gmail-schedule"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": 50,
+        "filters": {
+          "query": "={{ $env.GMAIL_QUERY || 'is:unread label:pkc' }}"
+        }
+      },
+      "name": "Get Emails",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [450, 300],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1",
+          "name": "Gmail OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract email content and metadata\nconst items = [];\n\nfor (const item of $input.all()) {\n  const email = item.json;\n  \n  // Extract text content\n  let textContent = '';\n  if (email.plainText) {\n    textContent = email.plainText;\n  } else if (email.snippet) {\n    textContent = email.snippet;\n  }\n  \n  items.push({\n    json: {\n      emailId: email.id,\n      threadId: email.threadId,\n      subject: email.subject,\n      from: email.from,\n      to: email.to,\n      date: email.date,\n      textContent: textContent,\n      hasAttachments: (email.attachments && email.attachments.length > 0),\n      attachments: email.attachments || [],\n      labels: email.labelIds || [],\n      receivedAt: new Date().toISOString()\n    }\n  });\n}\n\nreturn items;"
+      },
+      "name": "Parse Emails",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.textContent.length > 0 }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Filter Valid Emails",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Create a temporary file with email content\nconst fs = require('fs');\nconst path = require('path');\nconst os = require('os');\n\nconst items = [];\n\nfor (const item of $input.all()) {\n  const email = item.json;\n  \n  // Create email content\n  const content = `Subject: ${email.subject}\\nFrom: ${email.from}\\nDate: ${email.date}\\n\\n${email.textContent}`;\n  \n  // Write to temp file\n  const tempDir = os.tmpdir();\n  const filename = `email_${email.emailId}.txt`;\n  const filepath = path.join(tempDir, filename);\n  \n  fs.writeFileSync(filepath, content, 'utf8');\n  \n  items.push({\n    json: {\n      ...email,\n      tempFilePath: filepath,\n      tempFileName: filename\n    }\n  });\n}\n\nreturn items;"
+      },
+      "name": "Create Temp Files",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "command": "python3 {{ $env.PKC_HOME }}/scripts/process_document.py \"{{ $json.tempFilePath }}\" \"source=gmail\" \"email_id={{ $json.emailId }}\" \"subject={{ $json.subject }}\" \"from={{ $json.from }}\""
+      },
+      "name": "Process Email Content",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.hasAttachments }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Check Attachments",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1450, 200]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "messageId": "={{ $json.emailId }}",
+        "options": {
+          "attachments": true
+        }
+      },
+      "name": "Get Attachments",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1650, 100],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1",
+          "name": "Gmail OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Process each attachment\nconst items = [];\n\nfor (const item of $input.all()) {\n  const email = item.json;\n  \n  if (email.attachments && Array.isArray(email.attachments)) {\n    for (const attachment of email.attachments) {\n      // Check if attachment type is supported\n      const supportedTypes = ['.pdf', '.txt', '.md', '.docx', '.doc'];\n      const ext = attachment.name.substring(attachment.name.lastIndexOf('.')).toLowerCase();\n      \n      if (supportedTypes.includes(ext)) {\n        items.push({\n          json: {\n            emailId: email.emailId,\n            attachmentId: attachment.id,\n            attachmentName: attachment.name,\n            attachmentType: attachment.mimeType\n          },\n          binary: {\n            data: attachment.data\n          }\n        });\n      }\n    }\n  }\n}\n\nreturn items;"
+      },
+      "name": "Parse Attachments",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1850, 100]
+    },
+    {
+      "parameters": {
+        "command": "python3 {{ $env.PKC_HOME }}/scripts/process_document.py \"{{ $json.binary.data.directory }}/{{ $json.binary.data.fileName }}\" \"source=gmail_attachment\" \"email_id={{ $json.emailId }}\" \"attachment_name={{ $json.attachmentName }}\""
+      },
+      "name": "Process Attachment",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [2050, 100]
+    },
+    {
+      "parameters": {},
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [1850, 200]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "addLabels",
+        "messageId": "={{ $json.emailId }}",
+        "labelIds": ["PROCESSED"]
+      },
+      "name": "Mark as Processed",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [2050, 200],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1",
+          "name": "Gmail OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "rm -f {{ $json.tempFilePath }}"
+      },
+      "name": "Cleanup Temp Files",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [2250, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{\n  json: {\n    message: 'No valid emails to process',\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "name": "No Emails",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1050, 400]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Emails": {
+      "main": [
+        [
+          {
+            "node": "Parse Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Emails": {
+      "main": [
+        [
+          {
+            "node": "Filter Valid Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Valid Emails": {
+      "main": [
+        [
+          {
+            "node": "Create Temp Files",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Temp Files": {
+      "main": [
+        [
+          {
+            "node": "Process Email Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Email Content": {
+      "main": [
+        [
+          {
+            "node": "Check Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Attachments": {
+      "main": [
+        [
+          {
+            "node": "Get Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Attachments": {
+      "main": [
+        [
+          {
+            "node": "Parse Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Attachments": {
+      "main": [
+        [
+          {
+            "node": "Process Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Attachment": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Results": {
+      "main": [
+        [
+          {
+            "node": "Mark as Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark as Processed": {
+      "main": [
+        [
+          {
+            "node": "Cleanup Temp Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-07T00:00:00.000Z",
+  "versionId": "1"
+}

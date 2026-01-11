@@ -1,0 +1,32 @@
+# Recommended Ollama Models for PKC
+
+# Embedding Models (for vector generation)
+nomic-embed-text        # Recommended - 768 dimensions, fast and efficient
+mxbai-embed-large       # Alternative - 1024 dimensions, higher quality
+all-minilm              # Lightweight - 384 dimensions, faster but less accurate
+
+# Language Models (for text generation and chat)
+llama2                  # General purpose, good balance
+llama2:13b              # Better quality, requires more resources
+mistral                 # Fast and efficient
+mixtral                 # High quality, larger model
+phi                     # Lightweight for quick responses
+
+# Specialized Models
+codellama               # For code-related queries
+llama2-uncensored       # Less restrictive responses
+neural-chat             # Optimized for conversational AI
+
+# To pull a model:
+# curl http://192.168.9.98:30068/api/pull -d '{"name": "model-name"}'
+
+# To list installed models:
+# curl http://192.168.9.98:30068/api/tags
+
+# Model Selection Guidelines:
+# - For embeddings: Use nomic-embed-text (best balance of speed and quality)
+# - For general chat: Use llama2 or mistral
+# - For code: Use codellama
+# - For resource-constrained: Use phi or all-minilm
+
+# Important: The QDRANT_VECTOR_SIZE in .env must match the embedding model's output dimension

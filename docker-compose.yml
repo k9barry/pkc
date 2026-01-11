@@ -1,0 +1,121 @@
+# Docker Compose Reference Configuration
+# 
+# This file is for reference only. Your services are already running on TrueNAS Scale.
+# This shows the equivalent configuration if you were to set up the stack elsewhere.
+
+version: '3.8'
+
+services:
+  # OpenWebUI - User interface for interacting with LLMs
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    ports:
+      - "31028:8080"
+    volumes:
+      - open-webui-data:/app/backend/data
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY:-secret}
+    depends_on:
+      - ollama
+    restart: unless-stopped
+    networks:
+      - pkc-network
+
+  # Ollama - Local LLM inference engine
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "30068:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    restart: unless-stopped
+    networks:
+      - pkc-network
+    # Uncomment for GPU support
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # Qdrant - Vector database for semantic search
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "30333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    restart: unless-stopped
+    networks:
+      - pkc-network
+
+  # n8n - Workflow automation
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    ports:
+      - "30109:5678"
+    volumes:
+      - n8n-data:/home/node/.n8n
+      - /path/to/pkc:/pkc  # Mount PKC directory for scripts
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme}
+      - WEBHOOK_URL=http://192.168.9.98:30109/
+      - GENERIC_TIMEZONE=America/New_York
+    depends_on:
+      - n8n-postgres
+      - n8n-redis
+    restart: unless-stopped
+    networks:
+      - pkc-network
+
+  # PostgreSQL for n8n
+  n8n-postgres:
+    image: postgres:15-alpine
+    container_name: n8n-postgres
+    environment:
+      - POSTGRES_DB=n8n
+      - POSTGRES_USER=n8n
+      - POSTGRES_PASSWORD=${N8N_DB_PASSWORD:-n8n_password}
+    volumes:
+      - n8n-postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - pkc-network
+
+  # Redis for n8n
+  n8n-redis:
+    image: redis:7-alpine
+    container_name: n8n-redis
+    restart: unless-stopped
+    networks:
+      - pkc-network
+
+networks:
+  pkc-network:
+    driver: bridge
+
+volumes:
+  open-webui-data:
+  ollama-data:
+  qdrant-data:
+  n8n-data:
+  n8n-postgres-data:
+
+# Notes:
+# 1. This configuration is for reference. Your services are managed by TrueNAS.
+# 2. To use this elsewhere, update paths and environment variables in .env
+# 3. Ensure sufficient resources for Ollama (especially with GPU support)
+# 4. Change default passwords before deploying to production
+# 5. Consider using Docker secrets for sensitive data in production
