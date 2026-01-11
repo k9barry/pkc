@@ -30,4 +30,4 @@ watchdog==3.0.0
 # Utilities
 pyyaml==6.0.1
 colorlog==6.8.0
-tqdm==4.66.1
+tqdm==4.66.3
