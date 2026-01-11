@@ -109,15 +109,17 @@ if [ ! -d venv ]; then
             
             # Activate venv temporarily to install pip into it
             # Note: In bash, 'source' modifies the current shell, so this activation
-            # persists beyond this if-block. The activation at line 137 is for cases
-            # where venv creation succeeded with pip, ensuring consistency.
+            # persists beyond this if-block. The main venv activation below (after
+            # the if-else) ensures consistency for both standard and --without-pip paths.
             source venv/bin/activate
             
             print_info "Installing pip manually using get-pip.py (official PyPA script over HTTPS)..."
-            if curl -sSfL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py; then
-                if python /tmp/get-pip.py; then
+            # Use mktemp for secure temporary file creation
+            GETPIP_TEMP=$(mktemp)
+            if curl -sSfL https://bootstrap.pypa.io/get-pip.py -o "$GETPIP_TEMP"; then
+                if python "$GETPIP_TEMP"; then
                     print_success "pip installed successfully"
-                    rm -f /tmp/get-pip.py
+                    rm -f "$GETPIP_TEMP"
                 else
                     print_error "Failed to install pip"
                     exit 1
