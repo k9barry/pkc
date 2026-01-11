@@ -95,8 +95,41 @@ print_header "Python Environment Setup"
 
 if [ ! -d venv ]; then
     print_info "Creating virtual environment..."
-    python3 -m venv venv
-    print_success "Virtual environment created"
+    
+    # Try standard venv creation first
+    if python3 -m venv venv 2>/dev/null; then
+        print_success "Virtual environment created"
+    else
+        print_warning "Standard venv creation failed (likely due to missing ensurepip)"
+        print_info "Attempting to create venv without pip (TrueNAS workaround)..."
+        
+        # Create venv without pip
+        if python3 -m venv --without-pip venv; then
+            print_success "Virtual environment created without pip"
+            
+            # Activate to install pip manually
+            source venv/bin/activate
+            
+            print_info "Installing pip manually using get-pip.py..."
+            if curl -s https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py; then
+                if python /tmp/get-pip.py; then
+                    print_success "pip installed successfully"
+                    rm -f /tmp/get-pip.py
+                else
+                    print_error "Failed to install pip"
+                    exit 1
+                fi
+            else
+                print_error "Failed to download get-pip.py"
+                exit 1
+            fi
+        else
+            print_error "Failed to create virtual environment"
+            exit 1
+        fi
+    fi
+else
+    print_success "Virtual environment already exists"
 fi
 
 # Activate virtual environment

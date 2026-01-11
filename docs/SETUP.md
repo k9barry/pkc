@@ -35,6 +35,8 @@ cd pkc
 
 ### Install Python Dependencies
 
+#### Option 1: Standard Installation (Most Systems)
+
 ```bash
 # Recommended: Use a virtual environment
 python3 -m venv venv
@@ -43,6 +45,26 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 ```
+
+#### Option 2: TrueNAS or Systems Without python3-venv Package
+
+If you encounter an error like "ensurepip is not available" on TrueNAS or similar systems where package management is restricted:
+
+```bash
+# Create virtual environment without pip
+python3 -m venv --without-pip venv
+source venv/bin/activate
+
+# Manually install pip using get-pip.py
+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+python get-pip.py
+rm get-pip.py
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+**Note for TrueNAS users**: Since TrueNAS restricts package management tools like `apt`, the `--without-pip` method allows you to create a virtual environment and then manually bootstrap pip without requiring system package installation.
 
 ### Configure Environment
 
