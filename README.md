@@ -140,6 +140,8 @@ pip install -r requirements.txt
 npm install
 ```
 
+**Note for TrueNAS users**: If you encounter issues creating a virtual environment (ensurepip not available), see the detailed [TrueNAS setup instructions in SETUP.md](docs/SETUP.md#option-2-truenas-or-systems-without-python3-venv-package).
+
 ### 4. Import n8n Workflows
 
 1. Access n8n at `http://192.168.9.98:30109`

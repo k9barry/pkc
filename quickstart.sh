@@ -95,8 +95,46 @@ print_header "Python Environment Setup"
 
 if [ ! -d venv ]; then
     print_info "Creating virtual environment..."
-    python3 -m venv venv
-    print_success "Virtual environment created"
+    
+    # Try standard venv creation first
+    if python3 -m venv venv 2>/dev/null; then
+        print_success "Virtual environment created"
+    else
+        print_warning "Standard venv creation failed (likely due to missing ensurepip)"
+        print_info "Attempting to create venv without pip (TrueNAS workaround)..."
+        
+        # Create venv without pip
+        if python3 -m venv --without-pip venv; then
+            print_success "Virtual environment created without pip"
+            
+            # Activate venv temporarily to install pip into it
+            # Note: In bash, 'source' modifies the current shell, so this activation
+            # persists beyond this if-block. The main venv activation below (after
+            # the if-else) ensures consistency for both standard and --without-pip paths.
+            source venv/bin/activate
+            
+            print_info "Installing pip manually using get-pip.py (official PyPA script over HTTPS)..."
+            # Use mktemp for secure temporary file creation
+            GETPIP_TEMP=$(mktemp)
+            if curl -sSfL https://bootstrap.pypa.io/get-pip.py -o "$GETPIP_TEMP"; then
+                if python "$GETPIP_TEMP"; then
+                    print_success "pip installed successfully"
+                    rm -f "$GETPIP_TEMP"
+                else
+                    print_error "Failed to install pip"
+                    exit 1
+                fi
+            else
+                print_error "Failed to download get-pip.py from PyPA"
+                exit 1
+            fi
+        else
+            print_error "Failed to create virtual environment"
+            exit 1
+        fi
+    fi
+else
+    print_success "Virtual environment already exists"
 fi
 
 # Activate virtual environment

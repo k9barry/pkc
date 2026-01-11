@@ -2,6 +2,57 @@
 
 Common issues and solutions for the Personal Knowledge Cloud system.
 
+## Installation Issues
+
+### Python Virtual Environment Creation Failed
+
+**Error**: `The virtual environment was not created successfully because ensurepip is not available`
+
+**Common on**: TrueNAS systems where package management is disabled
+
+**Symptoms**:
+```bash
+python3 -m venv venv
+# Error: ensurepip is not available
+# Suggests: apt install python3.11-venv
+# But apt is disabled on TrueNAS
+```
+
+**Solution**:
+
+Use the `--without-pip` flag to create the virtual environment, then manually install pip:
+
+```bash
+# Step 1: Create virtual environment without pip
+python3 -m venv --without-pip venv
+
+# Step 2: Activate the virtual environment
+source venv/bin/activate
+
+# Step 3: Download and install pip manually using official PyPA bootstrap script
+curl --fail --location https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+python get-pip.py
+rm get-pip.py
+
+# Step 4: Verify pip installation
+pip --version
+
+# Step 5: Install project dependencies
+pip install -r requirements.txt
+```
+
+**Why this works**: The `--without-pip` flag allows Python to create a virtual environment without relying on the `ensurepip` module, which requires system packages. The `get-pip.py` script bootstraps pip directly from the Python Package Index without needing system package managers.
+
+**Security note**: The `get-pip.py` script is downloaded from the official Python Packaging Authority (PyPA) over HTTPS. For additional security verification, see https://pip.pypa.io/en/stable/installation/
+
+**Alternative (if you have virtualenv installed globally)**:
+```bash
+# If virtualenv is available on your system
+virtualenv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
 ## Service Connection Issues
 
 ### Cannot Connect to Services
