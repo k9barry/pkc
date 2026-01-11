@@ -29,7 +29,7 @@ python3 -m venv --without-pip venv
 # Step 2: Activate the virtual environment
 source venv/bin/activate
 
-# Step 3: Download and install pip manually
+# Step 3: Download and install pip manually using official PyPA bootstrap script
 curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 python get-pip.py
 rm get-pip.py
@@ -42,6 +42,8 @@ pip install -r requirements.txt
 ```
 
 **Why this works**: The `--without-pip` flag allows Python to create a virtual environment without relying on the `ensurepip` module, which requires system packages. The `get-pip.py` script bootstraps pip directly from the Python Package Index without needing system package managers.
+
+**Security note**: The `get-pip.py` script is downloaded from the official Python Packaging Authority (PyPA) over HTTPS. For additional security verification, see https://pip.pypa.io/en/stable/installation/
 
 **Alternative (if you have virtualenv installed globally)**:
 ```bash

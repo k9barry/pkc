@@ -107,10 +107,11 @@ if [ ! -d venv ]; then
         if python3 -m venv --without-pip venv; then
             print_success "Virtual environment created without pip"
             
-            # Activate to install pip manually
+            # Activate venv temporarily to install pip into it
+            # (The main activation happens later at line 135)
             source venv/bin/activate
             
-            print_info "Installing pip manually using get-pip.py..."
+            print_info "Installing pip manually using get-pip.py (official PyPA script over HTTPS)..."
             if curl -s https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py; then
                 if python /tmp/get-pip.py; then
                     print_success "pip installed successfully"
@@ -120,7 +121,7 @@ if [ ! -d venv ]; then
                     exit 1
                 fi
             else
-                print_error "Failed to download get-pip.py"
+                print_error "Failed to download get-pip.py from PyPA"
                 exit 1
             fi
         else

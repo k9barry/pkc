@@ -55,7 +55,7 @@ If you encounter an error like "ensurepip is not available" on TrueNAS or simila
 python3 -m venv --without-pip venv
 source venv/bin/activate
 
-# Manually install pip using get-pip.py
+# Manually install pip using get-pip.py (official PyPA bootstrap script)
 curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 python get-pip.py
 rm get-pip.py
@@ -65,6 +65,8 @@ pip install -r requirements.txt
 ```
 
 **Note for TrueNAS users**: Since TrueNAS restricts package management tools like `apt`, the `--without-pip` method allows you to create a virtual environment and then manually bootstrap pip without requiring system package installation.
+
+**Security note**: The `get-pip.py` script is downloaded from the official Python Packaging Authority (PyPA) over HTTPS. If you want additional security, you can verify the script before running it by comparing checksums available at https://pip.pypa.io/en/stable/installation/
 
 ### Configure Environment
 
