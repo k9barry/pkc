@@ -14,7 +14,7 @@ PyPDF2==3.0.1
 python-docx==1.1.0
 beautifulsoup4==4.12.2
 lxml==4.9.3
-markdown==3.5.1
+markdown==3.8.1
 
 # Text processing and embeddings
 langchain==0.1.0
